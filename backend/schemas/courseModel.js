@@ -1,41 +1,89 @@
 const mongoose = require("mongoose");
 
-const courseModel = mongoose.Schema(
+const sectionSchema = new mongoose.Schema({
+  S_title: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  S_description: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  S_content: {
+    filename: {
+      type: String,
+      required: true
+    },
+    path: {
+      type: String,
+      required: true
+    },
+    mimetype: {
+      type: String,
+      required: true
+    },
+    size: {
+      type: Number,
+      required: true
+    }
+  }
+});
+
+const courseSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
       required: true,
     },
     C_educator: {
       type: String,
-      required: [true, "name is required"],
+      required: [true, "Educator name is required"],
+      trim: true
     },
     C_title: {
       type: String,
-      required: [true, "C_title is required"],
+      required: [true, "Course title is required"],
+      trim: true,
+      maxlength: [200, "Course title cannot exceed 200 characters"]
     },
     C_categories: {
       type: String,
-      required: [true, "C_categories: is required"],
+      required: [true, "Course category is required"],
+      enum: ["IT & Software", "Finance & Accounting", "Personal Development"],
     },
     C_price: {
       type: String,
+      default: "free"
     },
     C_description: {
       type: String,
-      required: [true, "C_description: is required"],
+      required: [true, "Course description is required"],
+      trim: true,
+      maxlength: [1000, "Course description cannot exceed 1000 characters"]
     },
-    sections: {},
+    sections: [sectionSchema],
     enrolled: {
       type: Number,
       default: 0,
+      min: 0
     },
+    isActive: {
+      type: Boolean,
+      default: true
+    }
   },
   {
     timestamps: true,
   }
 );
 
-const courseSchema = mongoose.model("course", courseModel);
+// Indexes for better performance
+courseSchema.index({ userId: 1 });
+courseSchema.index({ C_categories: 1 });
+courseSchema.index({ createdAt: -1 });
+courseSchema.index({ C_title: "text", C_description: "text" });
 
-module.exports = courseSchema;
+module.exports = mongoose.model("course", courseSchema);

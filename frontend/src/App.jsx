@@ -7,23 +7,34 @@ import Login from "./components/common/Login";
 import Register from "./components/common/Register";
 import Dashboard from "./components/common/Dashboard";
 import CourseContent from "./components/user/student/CourseContent";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import PrivateRoute from "./components/common/PrivateRoute";
 
 export const UserContext = createContext();
 
 function App() {
   const date = new Date().getFullYear();
-  const [userData, setUserData] = useState();
+  const [userData, setUserData] = useState(null);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const getData = async () => {
     try {
-      const user = await JSON.parse(localStorage.getItem("user"));
-      if (user && user !== undefined) {
-        setUserData(user);
+      const user = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      
+      if (user && token) {
+        const parsedUser = JSON.parse(user);
+        setUserData(parsedUser);
         setUserLoggedIn(true);
       }
     } catch (error) {
-      console.log(error);
+      console.error('Error parsing user data:', error);
+      // Clear corrupted data
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,33 +42,51 @@ function App() {
     getData();
   }, []);
 
-  return (
-    <UserContext.Provider value={{ userData, userLoggedIn }}>
-      <div className="App">
-        <Router>
-          <div className="content">
-            <Routes>
-              <Route exact path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              {userLoggedIn ? (
-                <>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/courseSection/:courseId/:courseTitle" element={<CourseContent />} />
-                </>
-              ) : (
-                <Route path="/login" element={<Login />} />
-              )}
-            </Routes>
-          </div>
-          <footer className="footer">
-            <div className="text-center">
-              <p className="mb-0">© {date} LearnHub. Empowering learners worldwide.</p>
-            </div>
-          </footer>
-        </Router>
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="loading-spinner"></div>
       </div>
-    </UserContext.Provider>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <UserContext.Provider value={{ userData, userLoggedIn, setUserData, setUserLoggedIn }}>
+        <div className="App">
+          <Router>
+            <div className="content">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/courseSection/:courseId/:courseTitle" 
+                  element={
+                    <PrivateRoute>
+                      <CourseContent />
+                    </PrivateRoute>
+                  } 
+                />
+              </Routes>
+            </div>
+            <footer className="footer">
+              <div className="text-center">
+                <p className="mb-0">© {date} LearnHub. Empowering learners worldwide.</p>
+              </div>
+            </footer>
+          </Router>
+        </div>
+      </UserContext.Provider>
+    </ErrorBoundary>
   );
 }
 

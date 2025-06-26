@@ -9,12 +9,10 @@ const {
 
 const router = express.Router();
 
+// All admin routes require authentication
 router.get("/getallusers", authMiddleware, getAllUsersController);
-
 router.get("/getallcourses", authMiddleware, getAllCoursesController);
-
-router.delete('/deletecourse/:courseid', authMiddleware, deleteCourseController)
-
-router.delete('/deleteuser/:cuserid', authMiddleware, deleteUserController)
+router.delete('/deletecourse/:courseid', authMiddleware, deleteCourseController);
+router.delete('/deleteuser/:userid', authMiddleware, deleteUserController);
 
 module.exports = router;

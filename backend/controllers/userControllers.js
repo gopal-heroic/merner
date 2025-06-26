@@ -1,90 +1,143 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 const userSchema = require("../schemas/userModel");
 const courseSchema = require("../schemas/courseModel");
 const enrolledCourseSchema = require("../schemas/enrolledCourseModel");
 const coursePaymentSchema = require("../schemas/coursePaymentModel");
-//////////for registering/////////////////////////////
+
+// Register Controller
 const registerController = async (req, res) => {
   try {
-    const existsUser = await userSchema.findOne({ email: req.body.email });
-    if (existsUser) {
-      return res
-        .status(200)
-        .send({ message: "User already exists", success: false });
-    }
-    const password = req.body.password;
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    req.body.password = hashedPassword;
+    const { name, email, password, type } = req.body;
 
-    const newUser = new userSchema(req.body);
+    // Validation
+    if (!name || !email || !password || !type) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "All fields are required" 
+      });
+    }
+
+    // Check if user already exists
+    const existsUser = await userSchema.findOne({ email });
+    if (existsUser) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "User already exists with this email" 
+      });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = new userSchema({
+      name,
+      email,
+      password: hashedPassword,
+      type
+    });
+
     await newUser.save();
 
-    return res.status(201).send({ message: "Register Success", success: true });
+    return res.status(201).json({ 
+      success: true, 
+      message: "Registration successful" 
+    });
   } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .send({ success: false, message: `${error.message}` });
+    console.error('Registration error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: `Registration failed: ${error.message}` 
+    });
   }
 };
 
-////for the login
+// Login Controller
 const loginController = async (req, res) => {
   try {
-    const user = await userSchema.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email and password are required" 
+      });
+    }
+
+    // Find user
+    const user = await userSchema.findOne({ email });
     if (!user) {
-      return res
-        .status(200)
-        .send({ message: "User not found", success: false });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid email or password" 
+      });
     }
-    const isMatch = await bcrypt.compare(req.body.password, user.password);
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(200)
-        .send({ message: "Invalid email or password", success: false });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Invalid email or password" 
+      });
     }
-    const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
-      expiresIn: "1d",
-    });
-    user.password = undefined;
-    return res.status(200).send({
-      message: "Login success successfully",
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, type: user.type }, 
+      process.env.JWT_KEY, 
+      { expiresIn: "7d" }
+    );
+
+    // Remove password from user data
+    const userData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      type: user.type,
+      createdAt: user.createdAt
+    };
+
+    return res.status(200).json({
       success: true,
+      message: "Login successful",
       token,
-      userData: user,
+      userData
     });
   } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .send({ success: false, message: `${error.message}` });
+    console.error('Login error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: `Login failed: ${error.message}` 
+    });
   }
 };
 
-//get all courses
+// Get all courses (public)
 const getAllCoursesController = async (req, res) => {
   try {
-    const allCourses = await courseSchema.find();
-    if (!allCourses) {
-      return res.status(404).send("No Courses Found");
-    }
-
-    return res.status(200).send({
+    const allCourses = await courseSchema.find().sort({ createdAt: -1 });
+    
+    return res.status(200).json({
       success: true,
       data: allCourses,
+      count: allCourses.length
     });
   } catch (error) {
-    console.error("Error in deleting course:", error);
-    res
-      .status(500)
-      .send({ success: false, message: "Failed to delete course" });
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch courses" 
+    });
   }
 };
 
-////////posting course////////////
+// Post course controller
 const postCourseController = async (req, res) => {
   try {
     const {
@@ -98,33 +151,43 @@ const postCourseController = async (req, res) => {
       S_description,
     } = req.body;
 
-    // Normalize S_title and S_description to arrays (even if only one section)
+    // Validation
+    if (!C_educator || !C_title || !C_categories || !C_description) {
+      return res.status(400).json({
+        success: false,
+        message: "All course fields are required",
+      });
+    }
+
+    // Normalize arrays
     const sTitles = Array.isArray(S_title) ? S_title : [S_title];
     const sDescriptions = Array.isArray(S_description) ? S_description : [S_description];
     const files = req.files || [];
 
-    // Validate array lengths
+    // Validate arrays
     if (sTitles.length !== files.length || sDescriptions.length !== files.length) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
         message: "Mismatch between titles, descriptions, and uploaded files",
       });
     }
 
-    // Build sections array
+    // Build sections
     const sections = files.map((file, i) => ({
       S_title: sTitles[i],
       S_description: sDescriptions[i],
       S_content: {
         filename: file.filename,
         path: `/uploads/${file.filename}`,
+        mimetype: file.mimetype,
+        size: file.size
       },
     }));
 
-    // Set price as string 'free' or actual number
+    // Set price
     const price = C_price == 0 ? "free" : C_price;
 
-    // Create course document
+    // Create course
     const course = new courseSchema({
       userId,
       C_educator,
@@ -135,17 +198,17 @@ const postCourseController = async (req, res) => {
       sections,
     });
 
-    // Save to DB
     await course.save();
 
-    res.status(201).send({
+    res.status(201).json({
       success: true,
       message: "Course created successfully",
+      courseId: course._id
     });
 
   } catch (error) {
     console.error("Error creating course:", error);
-    res.status(500).send({
+    res.status(500).json({
       success: false,
       message: "Failed to create course",
       error: error.message,
@@ -153,216 +216,284 @@ const postCourseController = async (req, res) => {
   }
 };
 
-///all courses for the teacher
+// Get all courses for teacher
 const getAllCoursesUserController = async (req, res) => {
   try {
-    const allCourses = await courseSchema.find({ userId: req.body.userId });
-    if (!allCourses) {
-      res.send({
-        success: false,
-        message: "No Courses Found",
-      });
-    } else {
-      res.send({
-        success: true,
-        message: "All Courses Fetched Successfully",
-        data: allCourses,
-      });
-    }
+    const { userId } = req.body;
+    
+    const allCourses = await courseSchema.find({ userId }).sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      message: "Courses fetched successfully",
+      data: allCourses,
+      count: allCourses.length
+    });
   } catch (error) {
-    console.error("Error in fetching courses:", error);
-    res
-      .status(500)
-      .send({ success: false, message: "Failed to fetch courses" });
+    console.error("Error fetching teacher courses:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch courses" 
+    });
   }
 };
 
-///delete courses by the teacher
+// Delete course controller
 const deleteCourseController = async (req, res) => {
-  const { courseid } = req.params; // Use the correct parameter name
+  const { courseid } = req.params;
+  
   try {
-    // Attempt to delete the course by its ID
-    const course = await courseSchema.findByIdAndDelete({ _id: courseid });
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(courseid)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid course ID" 
+      });
+    }
 
-    // Check if the course was found and deleted successfully
+    const course = await courseSchema.findByIdAndDelete(courseid);
+
     if (course) {
-      res
-        .status(200)
-        .send({ success: true, message: "Course deleted successfully" });
+      // Clean up related data
+      await enrolledCourseSchema.deleteMany({ courseId: courseid });
+      await coursePaymentSchema.deleteMany({ courseId: courseid });
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Course deleted successfully" 
+      });
     } else {
-      res.status(404).send({ success: false, message: "Course not found" });
+      res.status(404).json({ 
+        success: false, 
+        message: "Course not found" 
+      });
     }
   } catch (error) {
-    console.error("Error in deleting course:", error);
-    res
-      .status(500)
-      .send({ success: false, message: "Failed to delete course" });
+    console.error("Error deleting course:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete course" 
+    });
   }
 };
 
-////enrolled course by the student
-
+// Enroll in course
 const enrolledCourseController = async (req, res) => {
   const { courseid } = req.params;
   const { userId } = req.body;
+  
   try {
-    const course = await courseSchema.findById(courseid);
-
-    if (!course) {
-      return res
-        .status(404)
-        .send({ success: false, message: "Course Not Found!" });
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(courseid)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid course ID" 
+      });
     }
 
-    let course_Length = course.sections.length;
+    const course = await courseSchema.findById(courseid);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Course not found" 
+      });
+    }
 
-    // Check if the user is already enrolled in the course
-    const enrolledCourse = await enrolledCourseSchema.findOne({
+    const courseLength = course.sections.length;
+
+    // Check if already enrolled
+    const existingEnrollment = await enrolledCourseSchema.findOne({
       courseId: courseid,
       userId: userId,
-      course_Length: course_Length,
     });
 
-    if (!enrolledCourse) {
-      const enrolledCourseInstance = new enrolledCourseSchema({
-        courseId: courseid,
-        userId: userId,
-        course_Length: course_Length,
-      });
-
-      const coursePayment = new coursePaymentSchema({
-        userId: req.body.userId,
-        courseId: courseid,
-        ...req.body,
-      });
-
-      await coursePayment.save();
-      await enrolledCourseInstance.save();
-
-      // Increment the 'enrolled' count of the course by +1
-      course.enrolled += 1;
-      await course.save();
-
-      res.status(200).send({
-        success: true,
-        message: "Enroll Successfully",
-        course: { id: course._id, Title: course.C_title },
-      });
-    } else {
-      res.status(200).send({
+    if (existingEnrollment) {
+      return res.status(409).json({
         success: false,
-        message: "You are already enrolled in this Course!",
+        message: "You are already enrolled in this course",
         course: { id: course._id, Title: course.C_title },
       });
     }
+
+    // Create enrollment
+    const enrolledCourseInstance = new enrolledCourseSchema({
+      courseId: courseid,
+      userId: userId,
+      course_Length: courseLength,
+    });
+
+    // Create payment record
+    const coursePayment = new coursePaymentSchema({
+      userId: userId,
+      courseId: courseid,
+      ...req.body,
+    });
+
+    await Promise.all([
+      coursePayment.save(),
+      enrolledCourseInstance.save()
+    ]);
+
+    // Update enrollment count
+    await courseSchema.findByIdAndUpdate(courseid, { 
+      $inc: { enrolled: 1 } 
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Enrollment successful",
+      course: { id: course._id, Title: course.C_title },
+    });
   } catch (error) {
-    console.error("Error in enrolling course:", error);
-    res
-      .status(500)
-      .send({ success: false, message: "Failed to enroll in the course" });
+    console.error("Error enrolling in course:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to enroll in course" 
+    });
   }
 };
 
-/////sending the course content for learning to student
+// Send course content
 const sendCourseContentController = async (req, res) => {
   const { courseid } = req.params;
+  const { userId } = req.body;
 
   try {
-    const course = await courseSchema.findById({ _id: courseid });
-    if (!course)
-      return res.status(404).send({
-        success: false,
-        message: "No such course found",
-      });
-
-    const user = await enrolledCourseSchema.findOne({
-      userId: req.body.userId,
-      courseId: courseid, // Add the condition to match the courseId
-    });
-
-    if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found",
-      });
-    } else {
-      return res.status(200).send({
-        success: true,
-        courseContent: course.sections,
-        completeModule: user.progress,
-        certficateData: user,
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(courseid)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid course ID" 
       });
     }
+
+    const course = await courseSchema.findById(courseid);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    const enrolledUser = await enrolledCourseSchema.findOne({
+      userId: userId,
+      courseId: courseid,
+    });
+
+    if (!enrolledUser) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not enrolled in this course",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      courseContent: course.sections,
+      completeModule: enrolledUser.progress || [],
+      certficateData: enrolledUser,
+    });
   } catch (error) {
-    console.error("An error occurred:", error);
-    return res.status(500).send({
+    console.error("Error fetching course content:", error);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
 };
 
-//////////////completing module////////
+// Complete section
 const completeSectionController = async (req, res) => {
-  const { courseId, sectionId } = req.body; // Assuming you send courseId and sectionId in the request body
+  const { courseId, sectionId } = req.body;
+  const { userId } = req.body;
 
-  // console.log(courseId, sectionId)
   try {
-    // Check if the user is enrolled in the course
-    const enrolledCourseContent = await enrolledCourseSchema.findOne({
-      courseId: courseId,
-      userId: req.body.userId, // Assuming you have user information in req.user
-    });
-
-    if (!enrolledCourseContent) {
-      return res
-        .status(400)
-        .send({ message: "User is not enrolled in the course" });
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid course ID" 
+      });
     }
 
-    // Update the progress for the section
-    const updatedProgress = enrolledCourseContent.progress || [];
-    updatedProgress.push({ sectionId: sectionId });
+    const enrolledCourse = await enrolledCourseSchema.findOne({
+      courseId: courseId,
+      userId: userId,
+    });
 
-    // Update the progress in the database
-    await enrolledCourseSchema.findOneAndUpdate(
-      { _id: enrolledCourseContent._id },
-      { progress: updatedProgress },
+    if (!enrolledCourse) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You are not enrolled in this course" 
+      });
+    }
+
+    // Check if section already completed
+    const isAlreadyCompleted = enrolledCourse.progress.some(
+      progress => progress.sectionId === sectionId
+    );
+
+    if (isAlreadyCompleted) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Section already completed" 
+      });
+    }
+
+    // Add to progress
+    const updatedProgress = [...enrolledCourse.progress, { sectionId: sectionId }];
+
+    await enrolledCourseSchema.findByIdAndUpdate(
+      enrolledCourse._id,
+      { 
+        progress: updatedProgress,
+        ...(updatedProgress.length === enrolledCourse.course_Length && {
+          certificateDate: new Date()
+        })
+      },
       { new: true }
     );
 
-    res.status(200).send({ message: "Section completed successfully" });
+    res.status(200).json({ 
+      success: true, 
+      message: "Section completed successfully" 
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Internal server error" });
+    console.error("Error completing section:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal server error" 
+    });
   }
 };
 
-////////////get all courses for paricular user
+// Get all enrolled courses for user
 const sendAllCoursesUserController = async (req, res) => {
   const { userId } = req.body;
+  
   try {
-    // First, fetch the enrolled courses for the user
     const enrolledCourses = await enrolledCourseSchema.find({ userId });
-
-    // Now, let's retrieve course details for each enrolled course
+    
     const coursesDetails = await Promise.all(
       enrolledCourses.map(async (enrolledCourse) => {
-        // Find the corresponding course details using courseId
-        const courseDetails = await courseSchema.findOne({
-          _id: enrolledCourse.courseId,
-        });
-        return courseDetails;
+        return await courseSchema.findById(enrolledCourse.courseId);
       })
     );
 
-    return res.status(200).send({
+    // Filter out null values (in case some courses were deleted)
+    const validCourses = coursesDetails.filter(course => course !== null);
+
+    return res.status(200).json({
       success: true,
-      data: coursesDetails,
+      data: validCourses,
+      count: validCourses.length
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "An error occurred" });
+    console.error("Error fetching user courses:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch enrolled courses" 
+    });
   }
 };
 
