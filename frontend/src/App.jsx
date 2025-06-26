@@ -40,23 +40,19 @@ function App() {
               <Route exact path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              {/* <Route path="/about" element={<About />} />
-            <Route path="/forgotpassword" element={<ForgotPassword />} /> */}
               {userLoggedIn ? (
                 <>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/courseSection/:courseId/:courseTitle" element={<CourseContent />} />
-
-
                 </>
               ) : (
                 <Route path="/login" element={<Login />} />
               )}
             </Routes>
           </div>
-          <footer className="bg-light text-center text-lg-start">
-            <div className="text-center p-3">
-              © {date} Copyright: Study App
+          <footer className="footer">
+            <div className="text-center">
+              <p className="mb-0">© {date} LearnHub. Empowering learners worldwide.</p>
             </div>
           </footer>
         </Router>
@@ -66,4 +62,3 @@ function App() {
 }
 
 export default App;
-
