@@ -24,7 +24,7 @@ const Register = () => {
 
    const handleChange = (e) => {
       const { name, value } = e.target;
-      setData({ ...data, [name]: value });
+      setData(prevData => ({ ...prevData, [name]: value }));
       // Clear error when user starts typing
       if (error) setError('');
    };
@@ -145,6 +145,20 @@ const Register = () => {
                         variant="outlined"
                         error={!!error && !data.name}
                         helperText={data.name && data.name.length < 2 ? "Name must be at least 2 characters" : ""}
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      />
                      <TextField
                         margin="normal"
@@ -158,6 +172,20 @@ const Register = () => {
                         variant="outlined"
                         error={!!error && !data.email}
                         helperText={data.email && !/\S+@\S+\.\S+/.test(data.email) ? "Please enter a valid email" : ""}
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      />
                      <TextField
                         margin="normal"
@@ -172,6 +200,20 @@ const Register = () => {
                         variant="outlined"
                         error={!!error && !data.password}
                         helperText={data.password && data.password.length < 6 ? "Password must be at least 6 characters" : ""}
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      />
                      <TextField
                         margin="normal"
@@ -185,6 +227,20 @@ const Register = () => {
                         required
                         error={!!error && !data.type}
                         helperText="Select your role to get personalized experience"
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      >
                         <MenuItem value="Student">Student - I want to learn</MenuItem>
                         <MenuItem value="Teacher">Teacher - I want to teach</MenuItem>
@@ -204,6 +260,10 @@ const Register = () => {
                               background: 'var(--gradient-primary)',
                               transform: 'translateY(-2px)',
                               boxShadow: 'var(--shadow-lg)'
+                           },
+                           '&:disabled': {
+                              background: '#94a3b8',
+                              transform: 'none'
                            }
                         }}
                      >

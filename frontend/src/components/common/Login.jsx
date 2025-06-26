@@ -21,7 +21,7 @@ const Login = () => {
 
    const handleChange = (e) => {
       const { name, value } = e.target;
-      setData({ ...data, [name]: value });
+      setData(prevData => ({ ...prevData, [name]: value }));
       // Clear error when user starts typing
       if (error) setError('');
    };
@@ -120,8 +120,21 @@ const Login = () => {
                         autoComplete="email"
                         autoFocus
                         variant="outlined"
-                        className="form-input"
                         error={!!error && !data.email}
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      />
                      <TextField
                         margin="normal"
@@ -134,8 +147,21 @@ const Login = () => {
                         id="password"
                         autoComplete="current-password"
                         variant="outlined"
-                        className="form-input"
                         error={!!error && !data.password}
+                        sx={{
+                           '& .MuiOutlinedInput-root': {
+                              backgroundColor: 'white',
+                              '& fieldset': {
+                                 borderColor: '#e2e8f0',
+                              },
+                              '&:hover fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                              '&.Mui-focused fieldset': {
+                                 borderColor: 'var(--primary-color)',
+                              },
+                           },
+                        }}
                      />
                      
                      <div className="text-end mb-3">
@@ -156,7 +182,6 @@ const Login = () => {
                         fullWidth
                         variant="contained"
                         disabled={loading}
-                        className="form-button mt-2 mb-3"
                         sx={{ 
                            mt: 2, 
                            mb: 2,
@@ -166,6 +191,10 @@ const Login = () => {
                               background: 'var(--gradient-primary)',
                               transform: 'translateY(-2px)',
                               boxShadow: 'var(--shadow-lg)'
+                           },
+                           '&:disabled': {
+                              background: '#94a3b8',
+                              transform: 'none'
                            }
                         }}
                      >
