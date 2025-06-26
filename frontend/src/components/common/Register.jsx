@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import { Container, Nav, Navbar } from 'react-bootstrap';
+import { Container, Nav, Navbar, Alert } from 'react-bootstrap';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -14,6 +14,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 const Register = () => {
    const navigate = useNavigate()
    const [loading, setLoading] = useState(false);
+   const [error, setError] = useState('');
    const [data, setData] = useState({
       name: "",
       email: "",
@@ -24,26 +25,61 @@ const Register = () => {
    const handleChange = (e) => {
       const { name, value } = e.target;
       setData({ ...data, [name]: value });
+      // Clear error when user starts typing
+      if (error) setError('');
+   };
+
+   const validateForm = () => {
+      if (!data?.name || !data?.email || !data?.password || !data?.type) {
+         setError("Please fill in all fields");
+         return false;
+      }
+
+      if (data.name.length < 2) {
+         setError("Name must be at least 2 characters long");
+         return false;
+      }
+
+      if (!/\S+@\S+\.\S+/.test(data.email)) {
+         setError("Please enter a valid email address");
+         return false;
+      }
+
+      if (data.password.length < 6) {
+         setError("Password must be at least 6 characters long");
+         return false;
+      }
+
+      return true;
    };
 
    const handleSubmit = async (e) => {
       e.preventDefault()
-      if (!data?.name || !data?.email || !data?.password || !data?.type) {
-         return alert("Please fill all fields");
+      
+      if (!validateForm()) {
+         return;
       }
       
       setLoading(true);
+      setError('');
+      
       try {
          const response = await axiosInstance.post('/api/user/register', data);
          if (response.data.success) {
             alert(response.data.message)
             navigate('/login')
          } else {
-            alert(response.data.message)
+            setError(response.data.message || 'Registration failed');
          }
       } catch (error) {
          console.log("Error", error);
-         alert("Registration failed. Please try again.");
+         if (error.response?.status === 409) {
+            setError("An account with this email already exists");
+         } else if (error.type === 'network') {
+            setError("Network error. Please check your connection.");
+         } else {
+            setError("Registration failed. Please try again.");
+         }
       } finally {
          setLoading(false);
       }
@@ -89,6 +125,12 @@ const Register = () => {
                      </Typography>
                   </div>
 
+                  {error && (
+                     <Alert variant="danger" className="mb-3">
+                        {error}
+                     </Alert>
+                  )}
+
                   <Box component="form" onSubmit={handleSubmit} noValidate>
                      <TextField
                         margin="normal"
@@ -101,6 +143,8 @@ const Register = () => {
                         autoComplete="name"
                         autoFocus
                         variant="outlined"
+                        error={!!error && !data.name}
+                        helperText={data.name && data.name.length < 2 ? "Name must be at least 2 characters" : ""}
                      />
                      <TextField
                         margin="normal"
@@ -112,6 +156,8 @@ const Register = () => {
                         onChange={handleChange}
                         autoComplete="email"
                         variant="outlined"
+                        error={!!error && !data.email}
+                        helperText={data.email && !/\S+@\S+\.\S+/.test(data.email) ? "Please enter a valid email" : ""}
                      />
                      <TextField
                         margin="normal"
@@ -124,6 +170,8 @@ const Register = () => {
                         id="password"
                         autoComplete="new-password"
                         variant="outlined"
+                        error={!!error && !data.password}
+                        helperText={data.password && data.password.length < 6 ? "Password must be at least 6 characters" : ""}
                      />
                      <TextField
                         margin="normal"
@@ -135,9 +183,11 @@ const Register = () => {
                         onChange={handleChange}
                         variant="outlined"
                         required
+                        error={!!error && !data.type}
+                        helperText="Select your role to get personalized experience"
                      >
-                        <MenuItem value="Student">Student</MenuItem>
-                        <MenuItem value="Teacher">Teacher</MenuItem>
+                        <MenuItem value="Student">Student - I want to learn</MenuItem>
+                        <MenuItem value="Teacher">Teacher - I want to teach</MenuItem>
                      </TextField>
                      
                      <Button

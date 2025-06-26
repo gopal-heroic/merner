@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import { Container, Nav, Navbar } from 'react-bootstrap';
+import { Container, Nav, Navbar, Alert } from 'react-bootstrap';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -17,24 +17,29 @@ const Login = () => {
       password: "",
    })
    const [loading, setLoading] = useState(false);
+   const [error, setError] = useState('');
 
    const handleChange = (e) => {
       const { name, value } = e.target;
       setData({ ...data, [name]: value });
+      // Clear error when user starts typing
+      if (error) setError('');
    };
 
    const handleSubmit = async (e) => {
       e.preventDefault();
 
       if (!data?.email || !data?.password) {
-         return alert("Please fill all fields");
+         setError("Please fill in all fields");
+         return;
       }
       
       setLoading(true);
+      setError('');
+      
       try {
          const res = await axiosInstance.post('/api/user/login', data);
          if (res.data.success) {
-            alert(res.data.message)
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.userData));
             navigate('/dashboard')
@@ -42,13 +47,16 @@ const Login = () => {
                window.location.reload()
             }, 1000)
          } else {
-            alert(res.data.message)
+            setError(res.data.message || 'Login failed');
          }
       } catch (err) {
          if (err.response && err.response.status === 401) {
-            alert("User doesn't exist");
+            setError("Invalid email or password");
+         } else if (err.type === 'network') {
+            setError("Network error. Please check your connection.");
+         } else {
+            setError("Login failed. Please try again.");
          }
-         navigate("/login");
       } finally {
          setLoading(false);
       }
@@ -94,6 +102,12 @@ const Login = () => {
                      </Typography>
                   </div>
 
+                  {error && (
+                     <Alert variant="danger" className="mb-3">
+                        {error}
+                     </Alert>
+                  )}
+
                   <Box component="form" onSubmit={handleSubmit} noValidate>
                      <TextField
                         margin="normal"
@@ -107,6 +121,7 @@ const Login = () => {
                         autoFocus
                         variant="outlined"
                         className="form-input"
+                        error={!!error && !data.email}
                      />
                      <TextField
                         margin="normal"
@@ -120,16 +135,30 @@ const Login = () => {
                         autoComplete="current-password"
                         variant="outlined"
                         className="form-input"
+                        error={!!error && !data.password}
                      />
+                     
+                     <div className="text-end mb-3">
+                        <Link 
+                           to="/forgot-password" 
+                           style={{ 
+                              color: 'var(--primary-color)',
+                              textDecoration: 'none',
+                              fontSize: '0.875rem'
+                           }}
+                        >
+                           Forgot password?
+                        </Link>
+                     </div>
                      
                      <Button
                         type="submit"
                         fullWidth
                         variant="contained"
                         disabled={loading}
-                        className="form-button mt-4 mb-3"
+                        className="form-button mt-2 mb-3"
                         sx={{ 
-                           mt: 3, 
+                           mt: 2, 
                            mb: 2,
                            py: 1.5,
                            background: 'var(--gradient-primary)',

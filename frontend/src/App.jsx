@@ -9,6 +9,8 @@ import Dashboard from "./components/common/Dashboard";
 import CourseContent from "./components/user/student/CourseContent";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import PrivateRoute from "./components/common/PrivateRoute";
+import ForgotPassword from "./components/common/ForgotPassword";
+import About from "./components/common/About";
 
 export const UserContext = createContext();
 
@@ -60,6 +62,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/about" element={<About />} />
                 <Route 
                   path="/dashboard" 
                   element={
