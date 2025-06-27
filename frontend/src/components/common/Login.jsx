@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { Container, Nav, Navbar, Alert } from 'react-bootstrap';
 import Avatar from '@mui/material/Avatar';
@@ -9,9 +9,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import axiosInstance from './AxiosInstance';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { UserContext } from '../../App';
 
 const Login = () => {
    const navigate = useNavigate()
+   const { setUserData, setUserLoggedIn } = useContext(UserContext);
    const [data, setData] = useState({
       email: "",
       password: "",
@@ -42,10 +44,12 @@ const Login = () => {
          if (res.data.success) {
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.userData));
+            
+            // Update context
+            setUserData(res.data.userData);
+            setUserLoggedIn(true);
+            
             navigate('/dashboard')
-            setTimeout(() => {
-               window.location.reload()
-            }, 1000)
          } else {
             setError(res.data.message || 'Login failed');
          }

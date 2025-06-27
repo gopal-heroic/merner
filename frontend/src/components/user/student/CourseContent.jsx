@@ -48,6 +48,10 @@ const CourseContent = () => {
          }
       } catch (error) {
          console.log(error);
+         if (error.response?.status === 403) {
+            alert("You are not enrolled in this course");
+            window.history.back();
+         }
       } finally {
          setLoading(false);
       }
@@ -58,7 +62,8 @@ const CourseContent = () => {
    }, [courseId]);
 
    const playVideo = (videoPath, index) => {
-      setCurrentVideo(videoPath);
+      const fullVideoPath = videoPath.startsWith('http') ? videoPath : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${videoPath}`;
+      setCurrentVideo(fullVideoPath);
       setPlayingSectionIndex(index);
    };
 
@@ -68,7 +73,7 @@ const CourseContent = () => {
             setCompletedSections([...completedSections, playingSectionIndex]);
 
             try {
-               const res = await axiosInstance.post(`api/user/completemodule`, {
+               const res = await axiosInstance.post(`/api/user/completemodule`, {
                   courseId,
                   sectionId: sectionId
                }, {
@@ -82,6 +87,7 @@ const CourseContent = () => {
                }
             } catch (error) {
                console.log(error);
+               alert("Failed to mark section as complete");
             }
          }
       } else {
@@ -108,7 +114,7 @@ const CourseContent = () => {
          <NavBar />
          <Container fluid className="py-4">
             <div className="mb-4 fade-in">
-               <h1 className="text-center mb-3 text-gradient">{courseTitle}</h1>
+               <h1 className="text-center mb-3 text-gradient">{decodeURIComponent(courseTitle)}</h1>
                <div className="text-center mb-4">
                   <div className="d-inline-block" style={{ minWidth: '300px' }}>
                      <div className="d-flex justify-content-between align-items-center mb-2">
@@ -158,7 +164,7 @@ const CourseContent = () => {
                                           <Button 
                                              variant="primary" 
                                              size="sm"
-                                             onClick={() => playVideo(`http://localhost:3000${section.S_content.path}`, index)}
+                                             onClick={() => playVideo(section.S_content.path, index)}
                                              className="btn-primary-custom"
                                           >
                                              ▶ Play Video
@@ -260,7 +266,7 @@ const CourseContent = () => {
                      <p style={{ fontSize: '1.125rem', margin: '1rem 0' }}>
                         has successfully completed the course
                      </p>
-                     <h3 className="certificate-course">{courseTitle}</h3>
+                     <h3 className="certificate-course">{decodeURIComponent(courseTitle)}</h3>
                      <p style={{ fontSize: '1rem', margin: '1rem 0' }}>
                         on
                      </p>

@@ -135,6 +135,11 @@ const AddCourse = () => {
                   C_description: '',
                   sections: [],
                });
+               
+               // Trigger navigation back to home after success
+               setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('navigateToSection', { detail: 'home' }));
+               }, 2000);
             } else {
                setError('Failed to create course');
             }
@@ -143,7 +148,11 @@ const AddCourse = () => {
          }
       } catch (error) {
          console.error('An error occurred:', error);
-         setError('An error occurred while creating the course');
+         if (error.response?.data?.message) {
+            setError(error.response.data.message);
+         } else {
+            setError('An error occurred while creating the course');
+         }
       } finally {
          setLoading(false);
       }
@@ -232,6 +241,7 @@ const AddCourse = () => {
                               placeholder="Enter 0 for free course" 
                               required 
                               className="form-control"
+                              min="0"
                            />
                            <Form.Text className="text-muted">
                               Set to 0 to make this course free for all students
@@ -353,7 +363,9 @@ const AddCourse = () => {
                      <Button 
                         variant="outline-secondary" 
                         type="button"
-                        onClick={() => window.history.back()}
+                        onClick={() => {
+                           window.dispatchEvent(new CustomEvent('navigateToSection', { detail: 'home' }));
+                        }}
                      >
                         Cancel
                      </Button>

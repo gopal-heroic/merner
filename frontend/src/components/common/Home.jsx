@@ -69,6 +69,7 @@ const Home = () => {
                      <Nav.Link href="#features">Features</Nav.Link>
                      <Nav.Link href="#courses">Courses</Nav.Link>
                      <Nav.Link href="#about">About</Nav.Link>
+                     <Link to="/about" className="nav-link">About Us</Link>
                   </Nav>
                   <Nav className="d-flex gap-3">
                      <Link to={'/login'} className="nav-link">Login</Link>
@@ -99,11 +100,11 @@ const Home = () => {
                                  Start Learning Today
                               </Button>
                            </Link>
-                           <Link to={'#courses'}>
+                           <a href={'#courses'}>
                               <Button className="btn-secondary-custom">
                                  Explore Courses
                               </Button>
-                           </Link>
+                           </a>
                         </div>
                         
                         {/* Stats */}

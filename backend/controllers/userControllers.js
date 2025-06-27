@@ -283,7 +283,7 @@ const enrolledCourseController = async (req, res) => {
   const { userId } = req.body;
   
   try {
-    // Validate ObjectId
+    // Validate ObjectIds
     if (!mongoose.Types.ObjectId.isValid(courseid)) {
       return res.status(400).json({ 
         success: false, 
