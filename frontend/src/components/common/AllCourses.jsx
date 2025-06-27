@@ -17,7 +17,7 @@ const AllCourses = () => {
    const [filterType, setFilterType] = useState('');
    const [loading, setLoading] = useState(true);
 
-   const [showModal, setShowModal] = useState(Array(allCourses.length).fill(false));
+   const [showModal, setShowModal] = useState([]);
    const [cardDetails, setCardDetails] = useState({
       cardholdername: '',
       cardnumber: '',
@@ -72,11 +72,17 @@ const AllCourses = () => {
 
    const handleSubmit = async (courseId, courseTitle) => {
       try {
-         const res = await axiosInstance.post(`api/user/enrolledcourse/${courseId}`, cardDetails, {
+         // Prepare the enrollment data
+         const enrollmentData = {
+            ...cardDetails
+         };
+
+         const res = await axiosInstance.post(`api/user/enrolledcourse/${courseId}`, enrollmentData, {
             headers: {
                Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
          })
+         
          if (res.data.success) {
             alert(res.data.message);
             navigate(`/courseSection/${courseId}/${encodeURIComponent(courseTitle)}`);
@@ -232,7 +238,7 @@ const AllCourses = () => {
                                     value={cardDetails.cardnumber} 
                                     onChange={handleChange} 
                                     label="Card Number" 
-                                    type="number" 
+                                    type="text" 
                                     size="md"
                                     placeholder="1234 5678 9012 3457" 
                                     required 
@@ -256,7 +262,7 @@ const AllCourses = () => {
                                           value={cardDetails.cvvcode} 
                                           onChange={handleChange} 
                                           label="CVV" 
-                                          type="number" 
+                                          type="text" 
                                           size="md" 
                                           placeholder="123" 
                                           required 

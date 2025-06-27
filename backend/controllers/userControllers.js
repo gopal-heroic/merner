@@ -315,6 +315,9 @@ const enrolledCourseController = async (req, res) => {
       });
     }
 
+    // Calculate amount based on course price
+    const coursePrice = course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0;
+
     // Create enrollment
     const enrolledCourseInstance = new enrolledCourseSchema({
       courseId: courseid,
@@ -322,12 +325,19 @@ const enrolledCourseController = async (req, res) => {
       course_Length: courseLength,
     });
 
-    // Create payment record
+    // Create payment record with proper amount
     const coursePayment = new coursePaymentSchema({
       userId: userId,
       courseId: courseid,
-      amount: course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0,
-      ...req.body,
+      amount: coursePrice,
+      cardDetails: req.body.cardDetails || {
+        cardholdername: req.body.cardholdername || 'Free Course',
+        cardnumber: req.body.cardnumber || '0000-0000-0000-0000',
+        cvvcode: req.body.cvvcode || '000',
+        expmonthyear: req.body.expmonthyear || '12/2025'
+      },
+      status: coursePrice === 0 ? 'completed' : 'completed', // For demo purposes, all payments are completed
+      paymentMethod: coursePrice === 0 ? 'free' : 'card'
     });
 
     await Promise.all([
