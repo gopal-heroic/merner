@@ -12,6 +12,8 @@ const NavBar = ({ setSelectedComponent }) => {
    const handleLogout = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      user.setUserLoggedIn(false);
+      user.setUserData(null);
       window.location.href = "/";
    }
 
