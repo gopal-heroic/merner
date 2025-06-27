@@ -64,13 +64,22 @@ const NavBar = ({ setSelectedComponent }) => {
                   )}
                   
                   {user.userData.type === 'Admin' && (
-                     <Nav.Link 
-                        onClick={() => handleOptionClick('cousres')}
-                        style={{ cursor: 'pointer' }}
-                        className="nav-link"
-                     >
-                        Manage Courses
-                     </Nav.Link>
+                     <>
+                        <Nav.Link 
+                           onClick={() => handleOptionClick('cousres')}
+                           style={{ cursor: 'pointer' }}
+                           className="nav-link"
+                        >
+                           Manage Courses
+                        </Nav.Link>
+                        <Nav.Link 
+                           onClick={() => handleOptionClick('statistics')}
+                           style={{ cursor: 'pointer' }}
+                           className="nav-link"
+                        >
+                           📊 Statistics
+                        </Nav.Link>
+                     </>
                   )}
                   
                   {user.userData.type === 'Student' && (

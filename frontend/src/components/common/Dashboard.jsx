@@ -8,6 +8,7 @@ import AdminHome from '../admin/AdminHome';
 import { UserContext } from '../../App';
 import EnrolledCourses from '../user/student/EnrolledCourses';
 import AllCourses from '../admin/AllCourses';
+import AdminStatistics from '../admin/AdminStatistics';
 
 const Dashboard = () => {
    const user = useContext(UserContext)
@@ -37,6 +38,8 @@ const Dashboard = () => {
             return <EnrolledCourses />
          case 'cousres':
             return <AllCourses />
+         case 'statistics':
+            return <AdminStatistics />
          default:
             return <UserHome />
       }
