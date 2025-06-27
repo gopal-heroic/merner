@@ -1,7 +1,6 @@
 import React, { useContext } from 'react'
 import { Navbar, Nav, Button, Container, Dropdown } from 'react-bootstrap';
 import { UserContext } from '../../App';
-import { NavLink } from 'react-router-dom';
 
 const NavBar = ({ setSelectedComponent }) => {
    const user = useContext(UserContext)
@@ -17,7 +16,9 @@ const NavBar = ({ setSelectedComponent }) => {
    }
 
    const handleOptionClick = (component) => {
-      setSelectedComponent(component);
+      if (setSelectedComponent) {
+         setSelectedComponent(component);
+      }
    };
 
    return (

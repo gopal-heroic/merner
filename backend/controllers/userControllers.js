@@ -326,6 +326,7 @@ const enrolledCourseController = async (req, res) => {
     const coursePayment = new coursePaymentSchema({
       userId: userId,
       courseId: courseid,
+      amount: course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0,
       ...req.body,
     });
 

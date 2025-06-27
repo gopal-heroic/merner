@@ -4,6 +4,7 @@ import { BookOpen, Clock, Award, TrendingUp, Play, Star } from 'lucide-react'
 import { UserContext } from '../../../App'
 import AllCourses from '../../common/AllCourses'
 import axiosInstance from '../../common/AxiosInstance'
+import { Link } from 'react-router-dom'
 
 const StudentHome = () => {
    const user = useContext(UserContext)
@@ -49,6 +50,15 @@ const StudentHome = () => {
 
    const isPaidCourse = (price) => {
       return /\d/.test(price) && price !== 'free';
+   };
+
+   const getCategoryColor = (category) => {
+      switch (category) {
+         case 'IT & Software': return 'primary'
+         case 'Finance & Accounting': return 'success'
+         case 'Personal Development': return 'warning'
+         default: return 'secondary'
+      }
    };
 
    return (
@@ -120,13 +130,20 @@ const StudentHome = () => {
                <div className="mb-5">
                   <div className="d-flex justify-content-between align-items-center mb-4">
                      <h3>Continue Learning</h3>
-                     <Button 
-                        variant="outline-primary" 
-                        size="sm"
-                        onClick={() => window.location.hash = '#enrolledcourses'}
-                     >
-                        View All Courses
-                     </Button>
+                     <Link to="/dashboard">
+                        <Button 
+                           variant="outline-primary" 
+                           size="sm"
+                           onClick={() => {
+                              // This will be handled by the parent component
+                              if (window.setSelectedComponent) {
+                                 window.setSelectedComponent('enrolledcourese');
+                              }
+                           }}
+                        >
+                           View All Courses
+                        </Button>
+                     </Link>
                   </div>
                   <Row className="g-4">
                      {enrolledCourses.map((course) => (
@@ -138,30 +155,29 @@ const StudentHome = () => {
                               </div>
                               <Card.Body>
                                  <div className="mb-3">
-                                    <Badge className={`badge-${course.C_categories === 'IT & Software' ? 'primary' : course.C_categories === 'Finance & Accounting' ? 'success' : 'warning'}`}>
+                                    <Badge className={`badge-${getCategoryColor(course.C_categories)}`}>
                                        {course.C_categories}
                                     </Badge>
                                  </div>
                                  <div className="mb-3">
                                     <div className="d-flex justify-content-between align-items-center mb-2">
                                        <small className="text-muted">Progress</small>
-                                       <small className="text-muted">65%</small>
+                                       <small className="text-muted">0%</small>
                                     </div>
-                                    <ProgressBar now={65} variant="success" style={{ height: '6px' }} />
+                                    <ProgressBar now={0} variant="success" style={{ height: '6px' }} />
                                  </div>
                                  <div className="course-stats mb-3">
                                     <div className="course-stat">
                                        <span>📚</span>
-                                       <span>{course.sections.length} modules</span>
+                                       <span>{course.sections?.length || 0} modules</span>
                                     </div>
                                  </div>
-                                 <Button 
-                                    className="btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2"
-                                    onClick={() => window.location.href = `/courseSection/${course._id}/${course.C_title}`}
-                                 >
-                                    <Play size={16} />
-                                    Continue Learning
-                                 </Button>
+                                 <Link to={`/courseSection/${course._id}/${encodeURIComponent(course.C_title)}`}>
+                                    <Button className="btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2">
+                                       <Play size={16} />
+                                       Continue Learning
+                                    </Button>
+                                 </Link>
                               </Card.Body>
                            </Card>
                         </Col>

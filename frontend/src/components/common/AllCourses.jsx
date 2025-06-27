@@ -31,8 +31,8 @@ const AllCourses = () => {
 
    const handleShow = (courseIndex, coursePrice, courseId, courseTitle) => {
       if (coursePrice == 'free') {
-         handleSubmit(courseId)
-         return navigate(`/courseSection/${courseId}/${courseTitle}`)
+         handleSubmit(courseId, courseTitle)
+         return
       } else {
          const updatedShowModal = [...showModal];
          updatedShowModal[courseIndex] = true;
@@ -49,13 +49,11 @@ const AllCourses = () => {
    const getAllCoursesUser = async () => {
       try {
          setLoading(true);
-         const res = await axiosInstance.get(`api/user/getallcourses`, {
-            headers: {
-               Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-         });
+         const res = await axiosInstance.get(`api/user/getallcourses`);
          if (res.data.success) {
             setAllCourses(res.data.data);
+            // Initialize showModal array with correct length
+            setShowModal(Array(res.data.data.length).fill(false));
          }
       } catch (error) {
          console.log('An error occurred:', error);
@@ -72,7 +70,7 @@ const AllCourses = () => {
       return /\d/.test(course.C_price);
    };
 
-   const handleSubmit = async (courseId) => {
+   const handleSubmit = async (courseId, courseTitle) => {
       try {
          const res = await axiosInstance.post(`api/user/enrolledcourse/${courseId}`, cardDetails, {
             headers: {
@@ -81,13 +79,23 @@ const AllCourses = () => {
          })
          if (res.data.success) {
             alert(res.data.message);
-            navigate(`/courseSection/${res.data.course.id}/${res.data.course.Title}`);
+            navigate(`/courseSection/${courseId}/${encodeURIComponent(courseTitle)}`);
          } else {
-            alert(res.data.message);
-            navigate(`/courseSection/${res.data.course.id}/${res.data.course.Title}`);
+            if (res.data.message.includes("already enrolled")) {
+               alert(res.data.message);
+               navigate(`/courseSection/${courseId}/${encodeURIComponent(courseTitle)}`);
+            } else {
+               alert(res.data.message);
+            }
          }
       } catch (error) {
          console.log('An error occurred:', error);
+         if (error.response?.status === 409) {
+            alert("You are already enrolled in this course");
+            navigate(`/courseSection/${courseId}/${encodeURIComponent(courseTitle)}`);
+         } else {
+            alert("Failed to enroll in course. Please try again.");
+         }
       }
    }
 
@@ -204,7 +212,8 @@ const AllCourses = () => {
                               
                               <Form onSubmit={(e) => {
                                  e.preventDefault()
-                                 handleSubmit(course._id)
+                                 handleSubmit(course._id, course.C_title)
+                                 handleClose(index)
                               }}>
                                  <MDBInput 
                                     className='mb-3' 
