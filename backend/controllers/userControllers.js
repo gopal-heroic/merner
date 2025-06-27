@@ -277,7 +277,7 @@ const deleteCourseController = async (req, res) => {
   }
 };
 
-// Enroll in course
+// Enroll in course - UPDATED
 const enrolledCourseController = async (req, res) => {
   const { courseid } = req.params;
   const { userId } = req.body;
@@ -288,6 +288,13 @@ const enrolledCourseController = async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: "Invalid course ID" 
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid user ID" 
       });
     }
 
@@ -318,6 +325,10 @@ const enrolledCourseController = async (req, res) => {
     // Calculate amount based on course price
     const coursePrice = course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0;
 
+    // Generate dummy payment details
+    const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Create enrollment
     const enrolledCourseInstance = new enrolledCourseSchema({
       courseId: courseid,
@@ -325,7 +336,7 @@ const enrolledCourseController = async (req, res) => {
       course_Length: courseLength,
     });
 
-    // Create payment record with proper amount
+    // Create payment record with dummy data
     const coursePayment = new coursePaymentSchema({
       userId: userId,
       courseId: courseid,
@@ -336,30 +347,134 @@ const enrolledCourseController = async (req, res) => {
         cvvcode: req.body.cvvcode || '000',
         expmonthyear: req.body.expmonthyear || '12/2025'
       },
-      status: coursePrice === 0 ? 'completed' : 'completed', // For demo purposes, all payments are completed
-      paymentMethod: coursePrice === 0 ? 'free' : 'card'
+      status: 'completed',
+      paymentMethod: coursePrice === 0 ? 'free' : 'card',
+      transactionId: paymentId
     });
 
-    await Promise.all([
-      coursePayment.save(),
-      enrolledCourseInstance.save()
-    ]);
+    // Use transaction to ensure atomicity
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Update enrollment count
-    await courseSchema.findByIdAndUpdate(courseid, { 
-      $inc: { enrolled: 1 } 
-    });
+    try {
+      await coursePayment.save({ session });
+      await enrolledCourseInstance.save({ session });
+      
+      // Atomically increment enrollment count and get updated course
+      const updatedCourse = await courseSchema.findByIdAndUpdate(
+        courseid, 
+        { $inc: { enrolled: 1 } },
+        { new: true, session }
+      );
 
-    res.status(200).json({
-      success: true,
-      message: "Enrollment successful",
-      course: { id: course._id, Title: course.C_title },
-    });
+      await session.commitTransaction();
+
+      res.status(200).json({
+        success: true,
+        message: "Enrollment successful",
+        course: { 
+          id: updatedCourse._id, 
+          Title: updatedCourse.C_title,
+          enrolled: updatedCourse.enrolled 
+        },
+        payment: {
+          paymentId,
+          orderId,
+          amount: coursePrice,
+          status: 'success'
+        }
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
     console.error("Error enrolling in course:", error);
     res.status(500).json({ 
       success: false, 
       message: "Failed to enroll in course" 
+    });
+  }
+};
+
+// NEW: Fake payment endpoint
+const fakePaymentController = async (req, res) => {
+  const { courseid } = req.params;
+  
+  try {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(courseid)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid course ID" 
+      });
+    }
+
+    const course = await courseSchema.findById(courseid);
+    if (!course) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Course not found" 
+      });
+    }
+
+    const coursePrice = course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0;
+    const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    res.status(200).json({
+      success: true,
+      payment: {
+        amount: coursePrice,
+        paymentId,
+        orderId,
+        status: 'success'
+      }
+    });
+  } catch (error) {
+    console.error("Error processing fake payment:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Payment processing failed" 
+    });
+  }
+};
+
+// NEW: Forgot password endpoint
+const forgotPasswordController = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    // Validate email format
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address"
+      });
+    }
+
+    // Check if user exists (optional - for security, you might not want to reveal this)
+    const user = await userSchema.findOne({ email });
+    
+    // Always return success for security reasons (don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message: `Reset link sent to ${email}`
+    });
+  } catch (error) {
+    console.error("Error in forgot password:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send reset link"
     });
   }
 };
@@ -519,4 +634,6 @@ module.exports = {
   sendCourseContentController,
   completeSectionController,
   sendAllCoursesUserController,
+  fakePaymentController,
+  forgotPasswordController,
 };

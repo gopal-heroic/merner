@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect, createContext } from "react";
 
 import "./App.css";
@@ -10,6 +10,7 @@ import CourseContent from "./components/user/student/CourseContent";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import PrivateRoute from "./components/common/PrivateRoute";
 import ForgotPassword from "./components/common/ForgotPassword";
+import PaymentSuccess from "./components/common/PaymentSuccess";
 import About from "./components/common/About";
 
 export const UserContext = createContext();
@@ -64,6 +65,14 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/about" element={<About />} />
+                <Route 
+                  path="/payment-success/:paymentId" 
+                  element={
+                    <PrivateRoute>
+                      <PaymentSuccess />
+                    </PrivateRoute>
+                  } 
+                />
                 <Route 
                   path="/dashboard" 
                   element={

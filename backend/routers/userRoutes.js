@@ -12,6 +12,8 @@ const {
   sendCourseContentController,
   completeSectionController,
   sendAllCoursesUserController,
+  fakePaymentController,
+  forgotPasswordController,
 } = require("../controllers/userControllers");
 
 const router = express.Router();
@@ -20,6 +22,7 @@ const router = express.Router();
 router.post("/register", registerController);
 router.post("/login", loginController);
 router.get('/getallcourses', getAllCoursesController);
+router.post('/forgot-password', forgotPasswordController);
 
 // Protected routes
 router.post('/addcourse', authMiddleware, upload.array('S_content', 10), postCourseController);
@@ -29,5 +32,6 @@ router.post('/enrolledcourse/:courseid', authMiddleware, enrolledCourseControlle
 router.get('/coursecontent/:courseid', authMiddleware, sendCourseContentController);
 router.post('/completemodule', authMiddleware, completeSectionController);
 router.get('/getallcoursesuser', authMiddleware, sendAllCoursesUserController);
+router.get('/fake-payment/:courseid', authMiddleware, fakePaymentController);
 
 module.exports = router;

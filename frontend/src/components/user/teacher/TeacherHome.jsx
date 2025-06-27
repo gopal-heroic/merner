@@ -17,7 +17,7 @@ const TeacherHome = () => {
 
    const getAllCoursesUser = async () => {
       try {
-         const res = await axiosInstance.get(`api/user/getallcoursesteacher`, {
+         const res = await axiosInstance.get('/api/user/getallcoursesteacher', {
             headers: {
                Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
@@ -34,10 +34,10 @@ const TeacherHome = () => {
    };
 
    const calculateStats = (courses) => {
-      const totalStudents = courses.reduce((sum, course) => sum + course.enrolled, 0);
+      const totalStudents = courses.reduce((sum, course) => sum + (course.enrolled || 0), 0);
       const totalRevenue = courses.reduce((sum, course) => {
          const price = course.C_price === 'free' ? 0 : parseFloat(course.C_price) || 0;
-         return sum + (price * course.enrolled);
+         return sum + (price * (course.enrolled || 0));
       }, 0);
 
       setStats({
@@ -50,6 +50,17 @@ const TeacherHome = () => {
 
    useEffect(() => {
       getAllCoursesUser();
+      
+      // Listen for enrollment success events
+      const handleEnrollmentSuccess = () => {
+         getAllCoursesUser();
+      };
+      
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
    }, []);
 
    const toggleDescription = (courseId) => {
@@ -68,7 +79,7 @@ const TeacherHome = () => {
          return;
       }
       try {
-         const res = await axiosInstance.delete(`api/user/deletecourse/${courseId}`, {
+         const res = await axiosInstance.delete(`/api/user/deletecourse/${courseId}`, {
             headers: {
                Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
@@ -222,7 +233,7 @@ const TeacherHome = () => {
                               </div>
                               <div className="course-stat">
                                  <span>👥</span>
-                                 <span>{course.enrolled} enrolled</span>
+                                 <span>{course.enrolled || 0} enrolled</span>
                               </div>
                            </div>
 
@@ -230,10 +241,10 @@ const TeacherHome = () => {
                            <div className="mt-3">
                               <div className="d-flex justify-content-between align-items-center mb-2">
                                  <small className="text-muted">Enrollment Progress</small>
-                                 <small className="text-muted">{course.enrolled}/100</small>
+                                 <small className="text-muted">{course.enrolled || 0}/100</small>
                               </div>
                               <ProgressBar 
-                                 now={Math.min((course.enrolled / 100) * 100, 100)} 
+                                 now={Math.min(((course.enrolled || 0) / 100) * 100, 100)} 
                                  variant="success"
                                  style={{ height: '6px' }}
                               />
@@ -318,7 +329,7 @@ const TeacherHome = () => {
                            </div>
                            <div className="mb-3">
                               <strong>Enrolled Students:</strong>
-                              <span className="ms-2 fw-bold text-primary">{selectedCourse.enrolled}</span>
+                              <span className="ms-2 fw-bold text-primary">{selectedCourse.enrolled || 0}</span>
                            </div>
                         </Col>
                      </Row>

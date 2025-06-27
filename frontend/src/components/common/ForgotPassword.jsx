@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Container, Nav, Navbar, Alert } from 'react-bootstrap';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -9,8 +9,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import axiosInstance from './AxiosInstance';
 
 const ForgotPassword = () => {
+   const navigate = useNavigate();
    const [email, setEmail] = useState('');
    const [loading, setLoading] = useState(false);
    const [success, setSuccess] = useState(false);
@@ -33,13 +35,19 @@ const ForgotPassword = () => {
       setError('');
 
       try {
-         // Simulate API call - replace with actual forgot password logic
-         await new Promise(resolve => setTimeout(resolve, 2000));
+         const res = await axiosInstance.post('/api/user/forgot-password', { email });
          
-         // For now, we'll just show success message
-         // In a real app, you would call your forgot password API here
-         setSuccess(true);
+         if (res.data.success) {
+            setSuccess(true);
+            // Auto redirect to login after 3 seconds
+            setTimeout(() => {
+               navigate('/login');
+            }, 3000);
+         } else {
+            setError(res.data.message || 'Failed to send reset email');
+         }
       } catch (error) {
+         console.error('Forgot password error:', error);
          setError('Failed to send reset email. Please try again.');
       } finally {
          setLoading(false);
@@ -181,6 +189,10 @@ const ForgotPassword = () => {
                         <Typography variant="body2" color="textSecondary" className="mb-4">
                            Didn't receive the email? Check your spam folder or try again.
                         </Typography>
+                        
+                        <Alert variant="success" className="mb-4">
+                           Reset link sent successfully! Redirecting to login page in 3 seconds...
+                        </Alert>
                         
                         <div className="d-flex flex-column gap-2">
                            <Button

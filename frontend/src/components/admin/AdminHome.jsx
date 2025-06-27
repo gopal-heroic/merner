@@ -51,7 +51,7 @@ const AdminHome = () => {
 
    const allUsersList = async () => {
       try {
-         const res = await axiosInstance.get('api/admin/getallusers', {
+         const res = await axiosInstance.get('/api/admin/getallusers', {
             headers: {
                "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
@@ -70,7 +70,7 @@ const AdminHome = () => {
 
    const allCoursesList = async () => {
       try {
-         const res = await axiosInstance.get('api/admin/getallcourses', {
+         const res = await axiosInstance.get('/api/admin/getallcourses', {
             headers: {
                "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
@@ -92,7 +92,7 @@ const AdminHome = () => {
    const calculateStats = (users, courses) => {
       const students = users.filter(user => user.type === 'Student').length
       const teachers = users.filter(user => user.type === 'Teacher').length
-      const totalEnrollments = courses.reduce((sum, course) => sum + course.enrolled, 0)
+      const totalEnrollments = courses.reduce((sum, course) => sum + (course.enrolled || 0), 0)
 
       setStats({
          totalUsers: users.length,
@@ -106,6 +106,17 @@ const AdminHome = () => {
    useEffect(() => {
       allUsersList()
       allCoursesList()
+      
+      // Listen for enrollment success events
+      const handleEnrollmentSuccess = () => {
+         allCoursesList();
+      };
+      
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
    }, [])
 
    const deleteUser = async (userId) => {
@@ -114,7 +125,7 @@ const AdminHome = () => {
          return;
       }
       try {
-         const res = await axiosInstance.delete(`api/admin/deleteuser/${userId}`, {
+         const res = await axiosInstance.delete(`/api/admin/deleteuser/${userId}`, {
             headers: {
                Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
