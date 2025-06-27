@@ -21,6 +21,21 @@ const NavBar = ({ setSelectedComponent }) => {
       }
    };
 
+   // Listen for navigation events from other components
+   React.useEffect(() => {
+      const handleNavigateToSection = (event) => {
+         if (setSelectedComponent) {
+            setSelectedComponent(event.detail);
+         }
+      };
+
+      window.addEventListener('navigateToSection', handleNavigateToSection);
+      
+      return () => {
+         window.removeEventListener('navigateToSection', handleNavigateToSection);
+      };
+   }, [setSelectedComponent]);
+
    return (
       <Navbar expand="lg" className="navbar-custom sticky-top">
          <Container>

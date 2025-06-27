@@ -32,7 +32,7 @@ const AllCourses = () => {
 
    const allCoursesList = async () => {
       try {
-         const res = await axiosInstance.get('api/admin/getallcourses', {
+         const res = await axiosInstance.get('/api/admin/getallcourses', {
             headers: {
                "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
@@ -52,6 +52,17 @@ const AllCourses = () => {
 
    useEffect(() => {
       allCoursesList()
+      
+      // Listen for enrollment success events
+      const handleEnrollmentSuccess = () => {
+         allCoursesList();
+      };
+      
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
    }, [])
 
    const deleteCourse = async (courseId) => {
@@ -60,7 +71,7 @@ const AllCourses = () => {
          return;
       }
       try {
-         const res = await axiosInstance.delete(`api/admin/deletecourse/${courseId}`, {
+         const res = await axiosInstance.delete(`/api/admin/deletecourse/${courseId}`, {
             headers: {
                Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
@@ -105,7 +116,7 @@ const AllCourses = () => {
                Course Management
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>
-               Manage all platform courses
+               Manage all platform courses ({allCourses.length} total)
             </Typography>
          </Box>
          <TableContainer>
@@ -167,7 +178,7 @@ const AllCourses = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                                  <People sx={{ fontSize: 16, color: '#64748b' }} />
                                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#10b981' }}>
-                                    {course.enrolled}
+                                    {course.enrolled || 0}
                                  </Typography>
                               </Box>
                            </StyledTableCell>

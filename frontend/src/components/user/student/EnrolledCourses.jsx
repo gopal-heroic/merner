@@ -11,7 +11,7 @@ const EnrolledCourses = () => {
    const getAllEnrolledCourses = async () => {
       try {
          setLoading(true);
-         const res = await axiosInstance.get('api/user/getallcoursesuser', {
+         const res = await axiosInstance.get('/api/user/getallcoursesuser', {
             headers: {
                "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
@@ -30,6 +30,17 @@ const EnrolledCourses = () => {
 
    useEffect(() => {
       getAllEnrolledCourses()
+      
+      // Listen for enrollment success events
+      const handleEnrollmentSuccess = () => {
+         getAllEnrolledCourses();
+      };
+      
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
    }, [])
 
    const isPaidCourse = (price) => {
@@ -61,6 +72,17 @@ const EnrolledCourses = () => {
          <div className="mb-4 fade-in">
             <h1 className="text-gradient mb-2">My Enrolled Courses</h1>
             <p className="text-muted">Continue your learning journey</p>
+            <div className="mb-3">
+               <Badge bg="primary" className="me-2">
+                  {allEnrolledCourses.length} Enrolled Courses
+               </Badge>
+               <Badge bg="success" className="me-2">
+                  {Math.floor(allEnrolledCourses.length * 0.3)} Completed
+               </Badge>
+               <Badge bg="warning">
+                  {allEnrolledCourses.length - Math.floor(allEnrolledCourses.length * 0.3)} In Progress
+               </Badge>
+            </div>
          </div>
 
          {allEnrolledCourses?.length > 0 ? (
@@ -140,12 +162,15 @@ const EnrolledCourses = () => {
                <p className="text-muted mb-4">
                   Start your learning journey by enrolling in a course
                </p>
-               <Link to="/">
-                  <Button className="btn-primary-custom d-flex align-items-center gap-2 mx-auto">
-                     <BookOpen size={20} />
-                     Browse Courses
-                  </Button>
-               </Link>
+               <Button 
+                  className="btn-primary-custom d-flex align-items-center gap-2 mx-auto"
+                  onClick={() => {
+                     window.dispatchEvent(new CustomEvent('navigateToSection', { detail: 'home' }));
+                  }}
+               >
+                  <BookOpen size={20} />
+                  Browse Courses
+               </Button>
             </div>
          )}
       </Container>

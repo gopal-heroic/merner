@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import NavBar from './NavBar';
 import UserHome from "./UserHome"
 import { Container } from 'react-bootstrap';
@@ -12,6 +12,20 @@ import AllCourses from '../admin/AllCourses';
 const Dashboard = () => {
    const user = useContext(UserContext)
    const [selectedComponent, setSelectedComponent] = useState('home');
+
+   // Listen for enrollment success to refresh data
+   useEffect(() => {
+      const handleEnrollmentSuccess = () => {
+         // Force re-render of current component
+         setSelectedComponent(prev => prev);
+      };
+
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
+   }, []);
 
    const renderSelectedComponent = () => {
       switch (selectedComponent) {

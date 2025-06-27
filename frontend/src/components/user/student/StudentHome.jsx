@@ -19,7 +19,7 @@ const StudentHome = () => {
 
    const getEnrolledCourses = async () => {
       try {
-         const res = await axiosInstance.get('api/user/getallcoursesuser', {
+         const res = await axiosInstance.get('/api/user/getallcoursesuser', {
             headers: {
                "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
@@ -36,16 +36,33 @@ const StudentHome = () => {
    }
 
    const calculateStats = (courses) => {
+      // For now using placeholder calculations since we don't have completion tracking yet
+      const totalEnrolled = courses.length
+      const completedCourses = Math.floor(courses.length * 0.3) // 30% completion rate
+      const inProgress = courses.length - completedCourses
+      const certificates = Math.floor(courses.length * 0.2) // 20% have certificates
+
       setStats({
-         totalEnrolled: courses.length,
-         completedCourses: Math.floor(courses.length * 0.3), // Placeholder
-         inProgress: Math.floor(courses.length * 0.7), // Placeholder
-         certificates: Math.floor(courses.length * 0.2) // Placeholder
+         totalEnrolled,
+         completedCourses,
+         inProgress,
+         certificates
       })
    }
 
    useEffect(() => {
       getEnrolledCourses()
+      
+      // Listen for enrollment success events
+      const handleEnrollmentSuccess = () => {
+         getEnrolledCourses();
+      };
+      
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
    }, [])
 
    const isPaidCourse = (price) => {
@@ -60,6 +77,17 @@ const StudentHome = () => {
          default: return 'secondary'
       }
    };
+
+   if (loading) {
+      return (
+         <Container className="py-5">
+            <div className="text-center">
+               <div className="loading-spinner mx-auto mb-3"></div>
+               <p>Loading dashboard...</p>
+            </div>
+         </Container>
+      );
+   }
 
    return (
       <Container fluid className="py-4">
@@ -130,20 +158,16 @@ const StudentHome = () => {
                <div className="mb-5">
                   <div className="d-flex justify-content-between align-items-center mb-4">
                      <h3>Continue Learning</h3>
-                     <Link to="/dashboard">
-                        <Button 
-                           variant="outline-primary" 
-                           size="sm"
-                           onClick={() => {
-                              // This will be handled by the parent component
-                              if (window.setSelectedComponent) {
-                                 window.setSelectedComponent('enrolledcourese');
-                              }
-                           }}
-                        >
-                           View All Courses
-                        </Button>
-                     </Link>
+                     <Button 
+                        variant="outline-primary" 
+                        size="sm"
+                        onClick={() => {
+                           // Trigger navigation to enrolled courses
+                           window.dispatchEvent(new CustomEvent('navigateToSection', { detail: 'enrolledcourese' }));
+                        }}
+                     >
+                        View All Courses
+                     </Button>
                   </div>
                   <Row className="g-4">
                      {enrolledCourses.map((course) => (
