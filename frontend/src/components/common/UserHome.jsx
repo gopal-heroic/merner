@@ -4,26 +4,38 @@ import { UserContext } from '../../App';
 import TeacherHome from '../user/teacher/TeacherHome';
 import AdminHome from '../admin/AdminHome';
 import StudentHome from '../user/student/StudentHome';
-// import axiosInstance from './AxiosInstance';
 
 const UserHome = () => {
    const user = useContext(UserContext);
-   let content;
-   {
-      switch (user.userData.type) {
-         case "Teacher":
-            content = <TeacherHome />
-            break;
-         case "Admin":
-            content = <AdminHome />
-            break;
-         case "Student":
-            content = <StudentHome />
-            break;
+   const [refreshKey, setRefreshKey] = useState(0);
 
-         default:
-            break;
-      }
+   useEffect(() => {
+      // Listen for enrollment success to refresh data
+      const handleEnrollmentSuccess = () => {
+         setRefreshKey(prev => prev + 1);
+      };
+
+      window.addEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      
+      return () => {
+         window.removeEventListener('enrollmentSuccess', handleEnrollmentSuccess);
+      };
+   }, []);
+
+   let content;
+   switch (user.userData.type) {
+      case "Teacher":
+         content = <TeacherHome key={refreshKey} />
+         break;
+      case "Admin":
+         content = <AdminHome key={refreshKey} />
+         break;
+      case "Student":
+         content = <StudentHome key={refreshKey} />
+         break;
+      default:
+         content = <div>Invalid user type</div>
+         break;
    }
 
    return (

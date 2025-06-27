@@ -37,7 +37,6 @@
   margin: 0;
   box-sizing: border-box;
   border: none;
-
 }
 
 html {
@@ -123,8 +122,51 @@ a:hover {
 }
 
 /* Hero Section */
+.hero-section {
+  background: var(--gradient-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
 
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
 
+.hero-content {
+  position: relative;
+  z-index: 2;
+  color: white;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
 
 /* Buttons */
 .btn-primary-custom {
@@ -171,6 +213,7 @@ a:hover {
   border-bottom: 1px solid var(--neutral-200);
   padding: 1rem 0;
   transition: var(--transition);
+  backdrop-filter: blur(10px);
 }
 
 .navbar-brand {
@@ -329,6 +372,7 @@ a:hover {
 .filter-input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 .filter-select {
@@ -344,6 +388,7 @@ a:hover {
 .filter-select:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 /* Tables */
@@ -465,6 +510,7 @@ a:hover {
   border: 1px solid var(--neutral-200);
   max-width: 450px;
   width: 100%;
+  backdrop-filter: blur(10px);
 }
 
 .form-title {
@@ -485,12 +531,12 @@ a:hover {
   font-size: 1rem;
   transition: var(--transition);
   background: white;
-  pointer-events: none;
 }
 
 .form-input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 .form-button {
@@ -653,7 +699,11 @@ a:hover {
   background-clip: text;
 }
 
-
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
 .hover-lift {
   transition: var(--transition);
@@ -673,3 +723,35 @@ a:hover {
   padding: 0 1rem;
 }
 
+/* Additional fixes for better UX */
+.min-vh-75 {
+  min-height: 75vh;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert {
+  border-radius: var(--border-radius);
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-content {
+  border-radius: var(--border-radius-lg);
+  border: none;
+  box-shadow: var(--shadow-xl);
+}
+
+.progress {
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.dropdown-menu {
+  border-radius: var(--border-radius);
+  border: none;
+  box-shadow: var(--shadow-lg);
+}
