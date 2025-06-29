@@ -21,11 +21,8 @@ A comprehensive online learning platform built with React.js frontend and Node.j
 - Course oversight
 - Platform analytics
   
-  
-##Demo vedio link:
-- https://drive.google.com/file/d/1_nYgZVVehekjr-A5OJ500djLZD2r57hz/view?usp=drivesdk
-  
-## Tech Stack
+## Tech stack and Demo vedio link :
+Demo link:https://drive.google.com/file/d/1_nYgZVVehekjr-A5OJ500djLZD2r57hz/view?usp=drivesdk
 
 ### Backend
 - **Node.js** with Express.js
