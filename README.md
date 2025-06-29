@@ -1,7 +1,6 @@
 # LearnHub - Online Learning Platform
 
 A comprehensive online learning platform built with React.js frontend and Node.js backend, featuring course management, user authentication, and progress tracking.
-##Demo video link:https://drive.google.com/file/d/1_nYgZVVehekjr-A5OJ500djLZD2r57hz/view?usp=drivesdk
 ## Features
 
 ### For Students
@@ -21,6 +20,8 @@ A comprehensive online learning platform built with React.js frontend and Node.j
 - User management
 - Course oversight
 - Platform analytics
+- ###Demo vedio link:
+- https://drive.google.com/file/d/1_nYgZVVehekjr-A5OJ500djLZD2r57hz/view?usp=drivesdk
 
 ## Tech Stack
 
